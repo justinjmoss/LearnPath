@@ -1,20 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useChat } from 'ai/react';
 import MessageList from './MessageList';
 import InputField from './InputField';
 import ModelSelector from './ModelSelector';
 import ErrorDisplay from './ErrorDisplay';
-import LoadingIndicator from './LoadingIndicator';
 
-export default function ChatInterface() {
+function ChatInterface() {
   const [model, setModel] = useState<'openai' | 'anthropic'>('openai');
-  
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: '/api/chat',
-    body: { model },
+  const [error, setError] = useState<Error | null>(null);
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: `/api/${model}/chat`,
+    onError: (error) => {
+      console.error("Chat error:", error);
+      setError(error);
+    },
   });
+
+  useEffect(() => {
+    // Reset error when model changes
+    setError(null);
+  }, [model]);
 
   const handleModelChange = (newModel: 'openai' | 'anthropic') => {
     setModel(newModel);
@@ -23,9 +31,8 @@ export default function ChatInterface() {
   return (
     <div className="flex flex-col h-full">
       <ModelSelector model={model} onModelChange={handleModelChange} />
-      <div className="flex-1 overflow-auto p-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4">
         <MessageList messages={messages} />
-        {isLoading && <LoadingIndicator />}
         {error && <ErrorDisplay error={error} />}
       </div>
       <InputField
@@ -37,3 +44,5 @@ export default function ChatInterface() {
     </div>
   );
 }
+
+export default ChatInterface;

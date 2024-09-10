@@ -1,4 +1,4 @@
-function ChatMessages({ messages }) {
+export default function ChatMessages({ messages }) {
   return (
     <div className="flex flex-col space-y-2 max-h-[400px] overflow-y-auto p-2">
       {messages.map((message, index) => (
@@ -9,13 +9,13 @@ function ChatMessages({ messages }) {
           }`}
         >
           <div
-            className={`max-w-[70%] p-1.5 rounded-lg ${
+            className={`max-w-[70%] p-2 rounded-lg ${
               message.role === 'user'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-800'
+                ? 'bg-white text-gray-800'
+                : 'bg-white text-gray-800'
             }`}
           >
-            <p className="text-xs">{message.content}</p>
+            <p className="text-sm">{message.content}</p>
           </div>
         </div>
       ))}

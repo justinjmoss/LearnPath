@@ -32,6 +32,10 @@ const nextConfig = {
       },
     ];
   },
+  serverRuntimeConfig: {
+    // Increase the timeout to 60 seconds (adjust as needed)
+    apiResponseTimeout: 60000,
+  },
 };
 
 export default nextConfig;
