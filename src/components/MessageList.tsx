@@ -16,13 +16,13 @@ export default function MessageList({ messages }: MessageListProps) {
           }`}
         >
           <div
-            className={`max-w-3/4 p-3 rounded-lg ${
+            className={`max-w-[70%] p-3 rounded-lg ${
               message.role === 'user'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-black border'
+                ? 'bg-gray-700 text-gray-200'
+                : 'bg-gray-800 text-gray-300'
             }`}
           >
-            <ReactMarkdown>{message.content}</ReactMarkdown>
+            <ReactMarkdown className="text-sm">{message.content}</ReactMarkdown>
           </div>
         </div>
       ))}

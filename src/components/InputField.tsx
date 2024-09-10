@@ -1,4 +1,5 @@
 import { FormEvent } from 'react';
+import { Send } from 'lucide-react';
 
 interface InputFieldProps {
   input: string;
@@ -14,21 +15,21 @@ export default function InputField({
   isLoading,
 }: InputFieldProps) {
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t bg-white">
+    <form onSubmit={handleSubmit} className="p-2 bg-transparent">
       <div className="flex items-center">
         <textarea
           value={input}
           onChange={handleInputChange}
           placeholder="Type your message..."
-          className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-gray-800 placeholder-gray-400"
-          rows={2}
+          className="flex-1 p-2 bg-transparent border border-gray-700 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-gray-400 text-white placeholder-gray-500 resize-none"
+          rows={1}
         />
         <button
           type="submit"
           disabled={isLoading}
-          className="bg-blue-500 text-white p-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 h-full"
+          className="p-2 bg-transparent border border-l-0 border-gray-700 rounded-r-lg hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-300 ease-in-out"
         >
-          Send
+          <Send size={20} className="text-gray-400" />
         </button>
       </div>
     </form>

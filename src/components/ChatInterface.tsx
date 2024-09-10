@@ -20,7 +20,6 @@ function ChatInterface() {
   });
 
   useEffect(() => {
-    // Reset error when model changes
     setError(null);
   }, [model]);
 
@@ -29,18 +28,22 @@ function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <ModelSelector model={model} onModelChange={handleModelChange} />
+    <div className="flex flex-col h-full bg-gray-900">
       <div className="flex-1 overflow-y-auto p-4">
         <MessageList messages={messages} />
         {error && <ErrorDisplay error={error} />}
       </div>
-      <InputField
-        input={input}
-        handleInputChange={handleInputChange}
-        handleSubmit={handleSubmit}
-        isLoading={isLoading}
-      />
+      <div className="border-t border-gray-700">
+        <InputField
+          input={input}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          isLoading={isLoading}
+        />
+        <div className="flex justify-end">
+          <ModelSelector model={model} onModelChange={handleModelChange} />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,13 @@
-export default function ChatMessages({ messages }) {
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface ChatMessagesProps {
+  messages: Message[];
+}
+
+export default function ChatMessages({ messages }: ChatMessagesProps) {
   return (
     <div className="flex flex-col space-y-2 max-h-[400px] overflow-y-auto p-2">
       {messages.map((message, index) => (
@@ -11,8 +20,8 @@ export default function ChatMessages({ messages }) {
           <div
             className={`max-w-[70%] p-2 rounded-lg ${
               message.role === 'user'
-                ? 'bg-white text-gray-800'
-                : 'bg-white text-gray-800'
+                ? 'bg-gray-700 text-gray-200'
+                : 'bg-gray-800 text-gray-300'
             }`}
           >
             <p className="text-sm">{message.content}</p>
