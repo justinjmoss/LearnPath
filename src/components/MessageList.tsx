@@ -27,7 +27,15 @@ export default function MessageList({ messages }: MessageListProps) {
                 : 'bg-dark-secondary text-gray-200'
             }`}
           >
-            <ReactMarkdown className={`text-sm prose ${message.role === 'user' ? 'prose-invert' : theme === 'light' ? 'prose-gray' : 'prose-invert'}`}>
+            <ReactMarkdown 
+              className={`text-sm prose ${
+                message.role === 'user' 
+                  ? 'prose-invert text-white' 
+                  : theme === 'light' 
+                    ? 'prose-gray' 
+                    : 'prose-invert'
+              }`}
+            >
               {message.content}
             </ReactMarkdown>
           </div>

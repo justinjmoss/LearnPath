@@ -39,4 +39,5 @@ const config: Config = {
     require('@tailwindcss/typography'),
   ],
 };
+
 export default config;
