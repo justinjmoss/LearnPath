@@ -1,4 +1,5 @@
 import "./globals.css";
+import ThemeWrapper from '../components/ThemeWrapper';
 
 export default function RootLayout({
   children,
@@ -7,7 +8,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ThemeWrapper>
+          {children}
+        </ThemeWrapper>
+      </body>
     </html>
   );
 }
