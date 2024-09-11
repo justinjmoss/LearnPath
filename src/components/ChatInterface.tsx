@@ -10,8 +10,8 @@ import { Menu } from 'lucide-react';
 import { useTheme } from '../lib/contexts/ThemeContext';
 
 function ChatInterface() {
-  const { theme } = useTheme();
-  const [model, setModel] = useState<'openai' | 'anthropic'>('openai');
+  const { resolvedTheme } = useTheme();
+  const [model, setModel] = useState<'openai' | 'anthropic' | 'perplexity'>('openai');
   const [error, setError] = useState<Error | null>(null);
   const [isSidenavOpen, setIsSidenavOpen] = useState(false);
   const sidenavRef = useRef<HTMLDivElement>(null);
@@ -28,7 +28,7 @@ function ChatInterface() {
     setError(null);
   }, [model]);
 
-  const handleModelChange = (newModel: 'openai' | 'anthropic') => {
+  const handleModelChange = (newModel: 'openai' | 'anthropic' | 'perplexity') => {
     setModel(newModel);
   };
 
@@ -50,9 +50,9 @@ function ChatInterface() {
   }, []);
 
   return (
-    <div className={`flex h-screen ${theme === 'light' ? 'bg-light-bg text-light-text' : 'bg-dark-bg text-dark-text'}`}>
+    <div className={`flex h-screen ${resolvedTheme === 'light' ? 'bg-light-bg text-light-text' : 'bg-dark-bg text-dark-text'}`}>
       <div ref={sidenavRef}>
-        <Sidenav isOpen={isSidenavOpen} onClose={toggleSidenav} model={model} onModelChange={handleModelChange} />
+        <Sidenav isOpen={isSidenavOpen} onClose={toggleSidenav} model={model} onModelChange={setModel} />
       </div>
       {isSidenavOpen && (
         <div
@@ -61,18 +61,18 @@ function ChatInterface() {
         ></div>
       )}
       <div className="flex flex-col flex-grow">
-        <div className={`flex items-center justify-between p-2 border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
-          <button onClick={toggleSidenav} className={theme === 'light' ? 'text-light-text' : 'text-dark-text'}>
+        <div className={`flex items-center justify-between p-2 border-b ${resolvedTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+          <button onClick={toggleSidenav} className={resolvedTheme === 'light' ? 'text-light-text' : 'text-dark-text'}>
             <Menu size={20} />
           </button>
-          <h1 className={`text-lg font-semibold absolute left-1/2 transform -translate-x-1/2 ${theme === 'light' ? 'text-light-text' : 'text-dark-text'}`}>AI Chat</h1>
+          <h1 className={`text-lg font-semibold absolute left-1/2 transform -translate-x-1/2 ${resolvedTheme === 'light' ? 'text-light-text' : 'text-dark-text'}`}>AI Chat</h1>
           <div className="w-5"></div>
         </div>
         <div className="flex-1 overflow-y-auto p-2"> {/* Reduced p-3 to p-2 */}
           <MessageList messages={messages} />
           {error && <ErrorDisplay error={error} />}
         </div>
-        <div className={`border-t ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+        <div className={`border-t ${resolvedTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
           <InputField
             input={input}
             handleInputChange={handleInputChange}
