@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent } from 'react';
-import { Send, Sun, Moon } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { useTheme } from '../lib/contexts/ThemeContext';
 
 interface InputFieldProps {
@@ -17,7 +17,7 @@ export default function InputField({
   handleSubmit,
   isLoading,
 }: InputFieldProps) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -34,26 +34,23 @@ export default function InputField({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          className="flex-1 p-2 bg-transparent border border-gray-700 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-gray-400 text-white dark:text-gray-200 placeholder-gray-500 resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
+          className={`flex-1 p-2 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary resize-none min-h-[40px] max-h-[120px] overflow-y-auto
+            ${theme === 'light' 
+              ? 'bg-light-input-bg text-light-input-text border border-light-input-border placeholder-gray-500' 
+              : 'bg-dark-input-bg text-dark-input-text border border-dark-input-border placeholder-gray-400'
+            }`}
           rows={1}
         />
         <button
           type="submit"
           disabled={isLoading}
-          className="px-3 bg-transparent border border-l-0 border-gray-700 rounded-r-lg hover:bg-gray-200 dark:hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-300 ease-in-out flex items-center justify-center"
+          className={`px-3 rounded-r-lg focus:outline-none focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary transition duration-300 ease-in-out flex items-center justify-center
+            ${theme === 'light'
+              ? 'bg-light-input-bg border border-l-0 border-light-input-border hover:bg-gray-200'
+              : 'bg-dark-input-bg border border-l-0 border-dark-input-border hover:bg-gray-700'
+            }`}
         >
-          <Send size={20} className="text-gray-600 dark:text-gray-400" />
-        </button>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="ml-2 p-2 bg-transparent border border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-gray-400 transition duration-300 ease-in-out"
-        >
-          {theme === 'light' ? (
-            <Moon size={20} className="text-gray-600" />
-          ) : (
-            <Sun size={20} className="text-gray-400" />
-          )}
+          <ArrowUp size={20} className={theme === 'light' ? 'text-light-text' : 'text-dark-text'} />
         </button>
       </div>
     </form>
