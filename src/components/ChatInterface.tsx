@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useChat } from 'ai/react';
+import { Message } from 'ai';
 import MessageList from './MessageList';
 import InputField from './InputField';
 import ErrorDisplay from './ErrorDisplay';
@@ -12,7 +13,7 @@ import ErrorBoundary from './ErrorBoundary';
 import { useDeepgram, SOCKET_STATES } from '../lib/contexts/DeepgramContext';
 
 function ChatInterface() {
-  const { resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [model, setModel] = useState<'openai' | 'anthropic' | 'perplexity'>('openai');
   const [error, setError] = useState<Error | null>(null);
   const [isSidenavOpen, setIsSidenavOpen] = useState(false);
@@ -26,6 +27,7 @@ function ChatInterface() {
     error: deepgramError
   } = useDeepgram();
   const [isRecording, setIsRecording] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error: chatError } = useChat({
     api: `/api/${model}/chat`,
@@ -66,11 +68,15 @@ function ChatInterface() {
   };
 
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isSidenavOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [isSidenavOpen]);
 
   const handleRetry = () => {
     setError(null);
@@ -85,11 +91,7 @@ function ChatInterface() {
 
   const handleMicrophoneClick = async () => {
     if (isRecording) {
-      disconnectFromDeepgram();
-      setIsRecording(false);
-      if (realtimeTranscript) {
-        handleInputChange({ target: { value: input + ' ' + realtimeTranscript } } as React.ChangeEvent<HTMLTextAreaElement>);
-      }
+      await stopRecording();
     } else {
       try {
         await connectToDeepgram();
@@ -101,34 +103,64 @@ function ChatInterface() {
     }
   };
 
+  const stopRecording = async () => {
+    disconnectFromDeepgram();
+    setIsRecording(false);
+    if (realtimeTranscript) {
+      handleInputChange({ target: { value: realtimeTranscript } } as React.ChangeEvent<HTMLInputElement>);
+    }
+  };
+
+  const handleStopRecordingAndSubmit = async () => {
+    await stopRecording();
+    handleSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>);
+  };
+
   useEffect(() => {
     if (connectionState === 'closed' && isRecording) {
       setIsRecording(false);
     }
   }, [connectionState, isRecording]);
 
+  // Remove the messagesWithLiveTranscript logic since we're not using it anymore
+
   return (
     <ErrorBoundary fallback={<div className="p-4 text-red-500">Something went wrong. Please try again later.</div>}>
-      <div className={`flex h-screen ${resolvedTheme === 'light' ? 'bg-light-bg text-light-text' : 'bg-dark-bg text-dark-text'}`}>
-        <div ref={sidenavRef}>
-          <Sidenav isOpen={isSidenavOpen} onClose={toggleSidenav} model={model} onModelChange={setModel} />
+      <div className={`flex h-screen ${theme === 'light' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'bg-light-bg text-light-text' : 'bg-dark-bg text-dark-text'}`}>
+        <div ref={sidenavRef} className="z-30">
+          <Sidenav 
+            isOpen={isSidenavOpen} 
+            onClose={toggleSidenav} 
+            model={model} 
+            onModelChange={handleModelChange}
+            theme={theme}
+            setTheme={setTheme}
+          />
         </div>
         {isSidenavOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-10"
+            className="fixed inset-0 bg-black bg-opacity-50 z-20"
             onClick={() => setIsSidenavOpen(false)}
           ></div>
         )}
-        <div className="flex flex-col flex-grow">
-          <div className={`flex items-center justify-between p-2 border-b ${resolvedTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
-            <button onClick={toggleSidenav} className={resolvedTheme === 'light' ? 'text-light-text' : 'text-dark-text'}>
-              <Menu size={20} />
-            </button>
-            <h1 className={`text-lg font-semibold absolute left-1/2 transform -translate-x-1/2 ${resolvedTheme === 'light' ? 'text-light-text' : 'text-dark-text'}`}>AI Chat</h1>
+        <div className="flex flex-col flex-grow relative">
+          <div className={`flex items-center justify-between p-2 border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+            {!isSidenavOpen && (
+              <button 
+                onClick={toggleSidenav} 
+                className={`z-30 ${theme === 'light' ? 'text-light-text' : 'text-dark-text'}`}
+              >
+                <Menu size={20} />
+              </button>
+            )}
+            <h1 className={`text-lg font-semibold absolute left-1/2 transform -translate-x-1/2 ${theme === 'light' ? 'text-light-text' : 'text-dark-text'}`}>AI Chat</h1>
             <div className="w-5"></div>
           </div>
-          <div className="flex-1 overflow-y-auto p-2"> {/* Reduced p-3 to p-2 */}
-            <MessageList messages={messages} />
+          <div className="flex-1 overflow-y-auto p-2">
+            <MessageList 
+              messages={messages} 
+              isRecording={isRecording}
+            />
             {error && (
               <ErrorDisplay 
                 error={error} 
@@ -136,7 +168,7 @@ function ChatInterface() {
               />
             )}
           </div>
-          <div className={`border-t ${resolvedTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+          <div className={`border-t ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
             <InputField
               input={input}
               handleInputChange={handleInputChange}
@@ -144,6 +176,8 @@ function ChatInterface() {
               isLoading={isLoading}
               onMicrophoneClick={handleMicrophoneClick}
               isRecording={isRecording}
+              onStopRecordingAndSubmit={handleStopRecordingAndSubmit}
+              isSidenavOpen={isSidenavOpen}
             />
           </div>
         </div>

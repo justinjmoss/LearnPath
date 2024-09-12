@@ -4,9 +4,10 @@ import { useTheme } from '../lib/contexts/ThemeContext';
 
 interface MessageListProps {
   messages: Message[];
+  isRecording: boolean;
 }
 
-export default function MessageList({ messages }: MessageListProps) {
+export default function MessageList({ messages, isRecording }: MessageListProps) {
   const { theme } = useTheme();
 
   return (
@@ -41,6 +42,17 @@ export default function MessageList({ messages }: MessageListProps) {
           </div>
         </div>
       ))}
+      {isRecording && (
+        <div className="flex justify-start">
+          <div className={`max-w-[90%] p-2 rounded-lg animate-pulse ${
+            theme === 'light'
+              ? 'bg-light-secondary text-gray-800'
+              : 'bg-dark-secondary text-gray-200'
+          }`}>
+            <div className="text-sm italic">Listening...</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

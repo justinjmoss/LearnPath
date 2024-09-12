@@ -7,20 +7,25 @@ import { motion } from 'framer-motion';
 
 export default function VoiceRecorder() {
   const [isRecording, setIsRecording] = useState(false);
-  const { connectToDeepgram, disconnectFromDeepgram, connectionState, realtimeTranscript } = useDeepgram();
+  const { connectToDeepgram, disconnectFromDeepgram, realtimeTranscript } = useDeepgram();
 
   const handleStartRecording = async () => {
-    await connectToDeepgram();
-    setIsRecording(true);
+    try {
+      await connectToDeepgram();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      // Handle error (e.g., show an error message to the user)
+    }
   };
 
-  const handleStopRecording = async () => {
+  const handleStopRecording = () => {
     disconnectFromDeepgram();
     setIsRecording(false);
     
-    // Save the note to Firebase
+    // Save the note to Firebase (if needed)
     if (realtimeTranscript) {
-      await addDocument('notes', {
+      addDocument('notes', {
         text: realtimeTranscript,
         timestamp: new Date().toISOString(),
       });
