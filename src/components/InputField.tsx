@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Mic, MicOff } from 'lucide-react';
 import { useTheme } from '../lib/contexts/ThemeContext';
 
 interface InputFieldProps {
@@ -9,6 +9,8 @@ interface InputFieldProps {
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
   isLoading: boolean;
+  onMicrophoneClick: () => void;
+  isRecording: boolean;
 }
 
 export default function InputField({
@@ -16,6 +18,8 @@ export default function InputField({
   handleInputChange,
   handleSubmit,
   isLoading,
+  onMicrophoneClick,
+  isRecording,
 }: InputFieldProps) {
   const { theme } = useTheme();
 
@@ -28,19 +32,30 @@ export default function InputField({
 
   return (
     <form onSubmit={handleSubmit} className="p-2 bg-transparent">
-      <div className="flex items-stretch">
+      <div className="flex items-stretch relative">
         <textarea
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          className={`flex-1 p-2 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary resize-none min-h-[40px] max-h-[120px] overflow-y-auto
+          className={`flex-1 p-2 pr-16 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary resize-none min-h-[40px] max-h-[120px] overflow-y-auto
             ${theme === 'light' 
               ? 'bg-light-input-bg text-light-input-text border border-light-input-border placeholder-gray-500' 
               : 'bg-dark-input-bg text-dark-input-text border border-dark-input-border placeholder-gray-400'
             }`}
           rows={1}
         />
+        <button
+          type="button"
+          onClick={onMicrophoneClick}
+          className={`absolute right-12 top-1/2 transform -translate-y-1/2 p-1 rounded-full focus:outline-none focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary transition duration-300 ease-in-out
+            ${theme === 'light'
+              ? 'text-light-text hover:bg-gray-200'
+              : 'text-dark-text hover:bg-gray-700'
+            } ${isRecording ? 'bg-red-500 text-white' : ''}`}
+        >
+          {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+        </button>
         <button
           type="submit"
           disabled={isLoading}

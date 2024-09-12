@@ -9,6 +9,7 @@ import Sidenav from './Sidenav';
 import { Menu } from 'lucide-react';
 import { useTheme } from '../lib/contexts/ThemeContext';
 import ErrorBoundary from './ErrorBoundary';
+import { useDeepgram, SOCKET_STATES } from '../lib/contexts/DeepgramContext';
 
 function ChatInterface() {
   const { resolvedTheme } = useTheme();
@@ -17,6 +18,14 @@ function ChatInterface() {
   const [isSidenavOpen, setIsSidenavOpen] = useState(false);
   const sidenavRef = useRef<HTMLDivElement>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const {
+    connectToDeepgram,
+    disconnectFromDeepgram,
+    realtimeTranscript,
+    connectionState,
+    error: deepgramError
+  } = useDeepgram();
+  const [isRecording, setIsRecording] = useState(false);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error: chatError } = useChat({
     api: `/api/${model}/chat`,
@@ -35,6 +44,12 @@ function ChatInterface() {
   useEffect(() => {
     setError(null);
   }, [model]);
+
+  useEffect(() => {
+    if (deepgramError) {
+      setError(new Error(deepgramError));
+    }
+  }, [deepgramError]);
 
   const handleModelChange = (newModel: 'openai' | 'anthropic' | 'perplexity') => {
     setModel(newModel);
@@ -67,6 +82,30 @@ function ChatInterface() {
       handleSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>);
     }
   }, [retryCount]);
+
+  const handleMicrophoneClick = async () => {
+    if (isRecording) {
+      disconnectFromDeepgram();
+      setIsRecording(false);
+      if (realtimeTranscript) {
+        handleInputChange({ target: { value: input + ' ' + realtimeTranscript } } as React.ChangeEvent<HTMLTextAreaElement>);
+      }
+    } else {
+      try {
+        await connectToDeepgram();
+        setIsRecording(true);
+      } catch (error) {
+        console.error("Error connecting to Deepgram:", error);
+        setError(new Error("Failed to start voice recording. Please try again."));
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (connectionState === 'closed' && isRecording) {
+      setIsRecording(false);
+    }
+  }, [connectionState, isRecording]);
 
   return (
     <ErrorBoundary fallback={<div className="p-4 text-red-500">Something went wrong. Please try again later.</div>}>
@@ -103,6 +142,8 @@ function ChatInterface() {
               handleInputChange={handleInputChange}
               handleSubmit={handleSubmit}
               isLoading={isLoading}
+              onMicrophoneClick={handleMicrophoneClick}
+              isRecording={isRecording}
             />
           </div>
         </div>
