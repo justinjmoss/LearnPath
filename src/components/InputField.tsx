@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import { ArrowUp, Mic, X } from 'lucide-react';
 import { useTheme } from '../lib/contexts/ThemeContext';
 import { useDeepgram } from '../lib/contexts/DeepgramContext';
@@ -14,6 +14,7 @@ interface InputFieldProps {
   isRecording: boolean;
   onStopRecordingAndSubmit: () => void;
   isSidenavOpen: boolean;
+  recorderRef: React.RefObject<MediaRecorder | null>;
 }
 
 export default function InputField({
@@ -25,9 +26,15 @@ export default function InputField({
   isRecording,
   onStopRecordingAndSubmit,
   isSidenavOpen,
+  recorderRef,
 }: InputFieldProps) {
   const { theme } = useTheme();
-  const { realtimeTranscript } = useDeepgram();
+  const { realtimeTranscript, disconnectFromDeepgram } = useDeepgram();
+  const [localInput, setLocalInput] = useState(input);
+
+  useEffect(() => {
+    setLocalInput(input);
+  }, [input]);
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,16 +43,31 @@ export default function InputField({
     } else {
       handleSubmit(e);
     }
+    setLocalInput('');
+  };
+
+  const handleStopRecording = () => {
+    disconnectFromDeepgram();
+    setLocalInput('');
+    if (recorderRef.current && recorderRef.current.state === 'recording') {
+      recorderRef.current.stop();
+    }
+    onMicrophoneClick(); // This should set isRecording to false
+  };
+
+  const handleLocalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalInput(e.target.value);
+    handleInputChange(e);
   };
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-10 p-4 ${theme === 'light' ? 'bg-light-bg' : 'bg-dark-bg'} ${isSidenavOpen ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`p-4 ${theme === 'light' ? 'bg-light-bg' : 'bg-dark-bg'} ${isSidenavOpen ? 'opacity-50 pointer-events-none' : ''}`}>
       <form onSubmit={handleFormSubmit} className="relative">
         <div className="relative">
           <input
             type="text"
-            value={isRecording ? realtimeTranscript : input}
-            onChange={handleInputChange}
+            value={isRecording ? realtimeTranscript : localInput}
+            onChange={handleLocalInputChange}
             placeholder={isRecording ? "Listening..." : "Type your message..."}
             className={`w-full py-3 px-4 pr-24 rounded-lg focus:outline-none ${
               isRecording ? 'animate-pulse-glow' : 'focus:ring-2 focus:ring-blue-500'
@@ -59,7 +81,7 @@ export default function InputField({
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
             <button
               type="button"
-              onClick={onMicrophoneClick}
+              onClick={handleStopRecording}
               className={`p-2 transition-colors ${
                 isRecording
                   ? 'text-red-500 hover:text-red-600'
@@ -73,7 +95,7 @@ export default function InputField({
             </button>
             <button
               type="submit"
-              disabled={isLoading || (!isRecording && !input.trim())}
+              disabled={isLoading || (!isRecording && !localInput.trim())}
               className={`p-2 transition-colors ${
                 theme === 'light' ? 'text-gray-600 hover:text-gray-800' : 'text-gray-400 hover:text-white'
               }`}

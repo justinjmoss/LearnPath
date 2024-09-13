@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useChat } from 'ai/react';
-import { Message } from 'ai';
 import MessageList from './MessageList';
 import InputField from './InputField';
 import ErrorDisplay from './ErrorDisplay';
@@ -27,7 +26,7 @@ function ChatInterface() {
     error: deepgramError
   } = useDeepgram();
   const [isRecording, setIsRecording] = useState(false);
-  const [liveTranscript, setLiveTranscript] = useState<string>('');
+  const recorderRef = useRef<MediaRecorder | null>(null);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error: chatError } = useChat({
     api: `/api/${model}/chat`,
@@ -85,7 +84,7 @@ function ChatInterface() {
 
   useEffect(() => {
     if (retryCount > 0) {
-      handleSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>);
+      handleSubmit(new Event('submit') as unknown as React.FormEvent<HTMLFormElement>);
     }
   }, [retryCount]);
 
@@ -94,11 +93,14 @@ function ChatInterface() {
       await stopRecording();
     } else {
       try {
+        if (recorderRef.current && recorderRef.current.state === 'recording') {
+          recorderRef.current.stop();
+        }
         await connectToDeepgram();
         setIsRecording(true);
       } catch (error) {
         console.error("Error connecting to Deepgram:", error);
-        setError(new Error("Failed to start voice recording. Please try again."));
+        setError(new Error("Failed to connect to Deepgram. Please try again."));
       }
     }
   };
@@ -109,79 +111,91 @@ function ChatInterface() {
     if (realtimeTranscript) {
       handleInputChange({ target: { value: realtimeTranscript } } as React.ChangeEvent<HTMLInputElement>);
     }
+    if (recorderRef.current && recorderRef.current.state === 'recording') {
+      recorderRef.current.stop();
+    }
   };
 
   const handleStopRecordingAndSubmit = async () => {
     await stopRecording();
-    handleSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>);
+    handleSubmit(new Event('submit') as unknown as React.FormEvent<HTMLFormElement>);
   };
 
   useEffect(() => {
-    if (connectionState === 'closed' && isRecording) {
+    if (connectionState === SOCKET_STATES.closed && isRecording) {
       setIsRecording(false);
     }
   }, [connectionState, isRecording]);
 
-  // Remove the messagesWithLiveTranscript logic since we're not using it anymore
-
   return (
     <ErrorBoundary fallback={<div className="p-4 text-red-500">Something went wrong. Please try again later.</div>}>
-      <div className={`flex h-screen ${theme === 'light' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'bg-light-bg text-light-text' : 'bg-dark-bg text-dark-text'}`}>
-        <div ref={sidenavRef} className="z-30">
-          <Sidenav 
-            isOpen={isSidenavOpen} 
-            onClose={toggleSidenav} 
-            model={model} 
-            onModelChange={handleModelChange}
-            theme={theme}
-            setTheme={setTheme}
+      <div className={`flex flex-col h-screen ${theme === 'light' ? 'bg-light-bg text-light-text' : 'bg-dark-bg text-dark-text'}`}>
+        {/* Header */}
+        <div className={`flex items-center justify-between p-2 border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+          <div className="flex-1 flex items-center">
+            <button 
+              onClick={toggleSidenav} 
+              className={`z-30 ${theme === 'light' ? 'text-light-text' : 'text-dark-text'}`}
+            >
+              <Menu size={20} />
+            </button>
+          </div>
+          <h1 className={`text-lg font-semibold flex-1 text-center ${theme === 'light' ? 'text-light-text' : 'text-dark-text'}`}>AI Chat</h1>
+          <div className="flex-1"></div>
+        </div>
+
+        {/* Scroll area (message list) */}
+        <div className="flex-1 overflow-y-auto">
+          <MessageList 
+            messages={messages} 
+            isRecording={isRecording}
+          />
+          {error && (
+            <ErrorDisplay 
+              error={error} 
+              onRetry={handleRetry}
+            />
+          )}
+        </div>
+
+        {/* Text entry form */}
+        <div className={`border-t ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+          <InputField
+            input={input}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            isLoading={isLoading}
+            onMicrophoneClick={handleMicrophoneClick}
+            isRecording={isRecording}
+            onStopRecordingAndSubmit={handleStopRecordingAndSubmit}
+            isSidenavOpen={isSidenavOpen}
+            recorderRef={recorderRef}
           />
         </div>
-        {isSidenavOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-20"
-            onClick={() => setIsSidenavOpen(false)}
-          ></div>
-        )}
-        <div className="flex flex-col flex-grow relative">
-          <div className={`flex items-center justify-between p-2 border-b ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
-            {!isSidenavOpen && (
-              <button 
-                onClick={toggleSidenav} 
-                className={`z-30 ${theme === 'light' ? 'text-light-text' : 'text-dark-text'}`}
-              >
-                <Menu size={20} />
-              </button>
-            )}
-            <h1 className={`text-lg font-semibold absolute left-1/2 transform -translate-x-1/2 ${theme === 'light' ? 'text-light-text' : 'text-dark-text'}`}>AI Chat</h1>
-            <div className="w-5"></div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            <MessageList 
-              messages={messages} 
-              isRecording={isRecording}
-            />
-            {error && (
-              <ErrorDisplay 
-                error={error} 
-                onRetry={handleRetry}
-              />
-            )}
-          </div>
-          <div className={`border-t ${theme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
-            <InputField
-              input={input}
-              handleInputChange={handleInputChange}
-              handleSubmit={handleSubmit}
-              isLoading={isLoading}
-              onMicrophoneClick={handleMicrophoneClick}
-              isRecording={isRecording}
-              onStopRecordingAndSubmit={handleStopRecordingAndSubmit}
-              isSidenavOpen={isSidenavOpen}
-            />
-          </div>
-        </div>
       </div>
+
+      {/* Sidenav */}
+      <div 
+        ref={sidenavRef} 
+        className={`fixed top-0 left-0 h-full w-56 bg-gray-800 text-white p-3 transform transition-transform duration-300 ease-in-out z-50 ${
+          isSidenavOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <Sidenav 
+          isOpen={isSidenavOpen} 
+          onClose={toggleSidenav} 
+          model={model} 
+          onModelChange={handleModelChange}
+          theme={theme}
+          setTheme={setTheme}
+        />
+      </div>
+      {isSidenavOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsSidenavOpen(false)}
+        ></div>
+      )}
     </ErrorBoundary>
   );
 }

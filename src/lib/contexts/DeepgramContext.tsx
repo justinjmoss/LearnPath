@@ -43,6 +43,11 @@ export const DeepgramContextProvider: FunctionComponent<DeepgramContextProviderP
       setError(null);
       setRealtimeTranscript("");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      if (audioRef.current && audioRef.current.state === 'recording') {
+        audioRef.current.stop();
+      }
+      
       audioRef.current = new MediaRecorder(stream);
 
       const apiKey = await getApiKey();
@@ -90,14 +95,13 @@ export const DeepgramContextProvider: FunctionComponent<DeepgramContextProviderP
   };
 
   const disconnectFromDeepgram = () => {
+    if (audioRef.current && audioRef.current.state === 'recording') {
+      audioRef.current.stop();
+    }
     if (connection) {
       connection.close();
       setConnection(null);
     }
-    if (audioRef.current) {
-      audioRef.current.stop();
-    }
-    setRealtimeTranscript("");
     setConnectionState(SOCKET_STATES.closed);
   };
 
